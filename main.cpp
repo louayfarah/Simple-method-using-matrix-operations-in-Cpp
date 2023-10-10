@@ -480,20 +480,13 @@ Matrix<double> calculateInverse(Matrix<double> A, int n)
     return A;
 }
 
-bool solution_found(vector<double> &z_minus_c, int n, string &purpose, double precision)
+
+bool solution_found(vector<double> &z_minus_c, int n, double precision)
 {
     for(int i = 0; i<n; i++)
     {
-        if(purpose == "maximum")
-        {
-            if(z_minus_c[i] + precision < 0)
-                return false;
-        }
-        else
-        {
-            if(z_minus_c[i]-precision > 0)
-                return false;
-        }
+        if(z_minus_c[i] + precision < 0)
+            return false;
     }
 
     return true;
@@ -517,6 +510,30 @@ void simplexMethod(Matrix<double>* C, Matrix<double>* A, Matrix<double>* b, doub
     //the size of C is n+m
     //The size of b is m
 
+
+    // Minimum case
+    if(purpose == "minimum")
+    {
+        for(int i = 0; i<m; i++)
+        {
+            C->setAtIndex(0, i, -(C->getAtIndex(0, i)));
+        }
+    }
+    else if(purpose != "maximum")
+    {
+        cout << "You have to chose either minimum or maximum!" << endl;
+        return;
+    }
+
+    vector<int> basic_vars, non_basic_vars;
+    for(int i = 0; i<n+m; i++)
+    {
+        if(i<n)
+            non_basic_vars.push_back(i);
+        else
+            basic_vars.push_back(i);
+    }
+
     // Step 0: Construct the initial basic feasible solution
     Matrix<double> P = A->transpose(); //(n+m, m)
 
@@ -536,9 +553,9 @@ void simplexMethod(Matrix<double>* C, Matrix<double>* A, Matrix<double>* b, doub
     cout << *C_b << endl;
     nb_iteration++;
 
-    vector<double> z_minus_c(n, (purpose=="maximum")?-1000:1000);
-    while(!solution_found(z_minus_c, n, purpose, precision))
+    while(true)
     {
+        vector<double> z_minus_c(n, 0);
         // Step 1: Compute the value of B^(-1) for the basis B using the inversion method
         Matrix<double> B_inverse = calculateInverse(*B, m);
 
@@ -550,14 +567,14 @@ void simplexMethod(Matrix<double>* C, Matrix<double>* A, Matrix<double>* b, doub
             Matrix<double> *P_i = new Matrix<double>(m, 1);
             for(int j = 0; j<m; j++)
             {
-                P_i->setAtIndex(j, 0, P.getAtIndex(i, j));
+                P_i->setAtIndex(j, 0, P.getAtIndex(non_basic_vars[i], j));
             }
 
             Matrix<double> temp = ((*C_b) * B_inverse * (*P_i));
-            z_minus_c[i] = temp.getAtIndex(0, 0) - C->getAtIndex(0, i);
+            z_minus_c[i] = temp.getAtIndex(0, 0) - C->getAtIndex(0, non_basic_vars[i]);
         }
 
-        if(solution_found(z_minus_c, n, purpose, precision))
+        if(solution_found(z_minus_c, n, precision))
         {
             Matrix<double> temp = (*C_b) * x_b;
             double z = temp.getAtIndex(0, 0);
@@ -579,21 +596,13 @@ void simplexMethod(Matrix<double>* C, Matrix<double>* A, Matrix<double>* b, doub
             int entering_i = 0;
             for(int i = 0; i<n; i++)
             {
-                if(purpose == "maximum")
-                {
-                    if(z_minus_c[i] < z_minus_c[entering_i])
-                        entering_i = i;
-                }
-                else //minimum
-                {
-                    if(z_minus_c[i] > z_minus_c[entering_i])
-                        entering_i = i;
-                }
+                if(z_minus_c[i] < z_minus_c[entering_i])
+                    entering_i = i;
             }
 
             for(int j = 0; j<m; j++)
             {
-                P_entering->setAtIndex(j, 0, P.getAtIndex(entering_i, j));
+                P_entering->setAtIndex(j, 0, P.getAtIndex(non_basic_vars[entering_i], j));
             }
 
             // Step 4: Compute B^(-1) * P_entering
@@ -616,7 +625,7 @@ void simplexMethod(Matrix<double>* C, Matrix<double>* A, Matrix<double>* b, doub
 
                 for(int j = 0; j<m; j++)
                 {
-                    P_leaving->setAtIndex(j, 0, P.getAtIndex(n+leaving_i, j));
+                    P_leaving->setAtIndex(j, 0, P.getAtIndex(basic_vars[leaving_i], j));
                 }
 
                 // Update B
@@ -626,13 +635,29 @@ void simplexMethod(Matrix<double>* C, Matrix<double>* A, Matrix<double>* b, doub
                 }
 
                 // Update C_b
-                C_b->setAtIndex(0, leaving_i, C->getAtIndex(0, entering_i));
+
+                C_b->setAtIndex(0, leaving_i, C->getAtIndex(0, non_basic_vars[entering_i]));
+
+                // Update basic variables
+                int temp = non_basic_vars[entering_i];
+                non_basic_vars[entering_i] = basic_vars[leaving_i];
+                basic_vars[leaving_i] = temp;
 
                 cout << "Iteration " << nb_iteration << ':' << endl;
                 cout << "B:" << endl;
                 cout << *B;
                 cout << "C_b:" << endl;
                 cout << *C_b << endl;
+
+                cout << "Basic variables:" << endl;
+                for(auto elt: basic_vars)
+                    cout << elt+1 << ' ';
+                cout << endl << endl;
+                cout << "Non Basic variables:" << endl;
+                for(auto elt: non_basic_vars)
+                    cout << elt+1 << ' ';
+                cout << endl << endl;
+
             }
         }
         nb_iteration++;
