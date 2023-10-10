@@ -480,6 +480,7 @@ Matrix<double> calculateInverse(Matrix<double> A, int n)
     return A;
 }
 
+
 bool solution_found(vector<double> &z_minus_c, int n, double precision)
 {
     for(int i = 0; i<n; i++)
@@ -634,6 +635,7 @@ void simplexMethod(Matrix<double>* C, Matrix<double>* A, Matrix<double>* b, doub
                 }
 
                 // Update C_b
+
                 C_b->setAtIndex(0, leaving_i, C->getAtIndex(0, non_basic_vars[entering_i]));
 
                 // Update basic variables
@@ -641,12 +643,12 @@ void simplexMethod(Matrix<double>* C, Matrix<double>* A, Matrix<double>* b, doub
                 non_basic_vars[entering_i] = basic_vars[leaving_i];
                 basic_vars[leaving_i] = temp;
 
-
                 cout << "Iteration " << nb_iteration << ':' << endl;
                 cout << "B:" << endl;
                 cout << *B;
                 cout << "C_b:" << endl;
                 cout << *C_b << endl;
+
                 cout << "Basic variables:" << endl;
                 for(auto elt: basic_vars)
                     cout << elt+1 << ' ';
@@ -655,6 +657,7 @@ void simplexMethod(Matrix<double>* C, Matrix<double>* A, Matrix<double>* b, doub
                 for(auto elt: non_basic_vars)
                     cout << elt+1 << ' ';
                 cout << endl << endl;
+
             }
         }
         nb_iteration++;
@@ -692,8 +695,6 @@ int main()
     string purpose;
     cout << "Type maximum or minimum:" << endl;
     cin >> purpose;
-
-    cout << *C << endl << *A << endl << *b << endl;
 
     simplexMethod(C, A, b, precision, purpose);
 
